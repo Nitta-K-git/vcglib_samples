@@ -1,7 +1,7 @@
 cmake_minimum_required( VERSION 3.6 )
 
-# option(USE_QT_SYSTEM "Use Qt system" OFF) # https://www.wagavulin.jp/entry/2011/11/27/222650
-# set(USE_QT_SYSTEM OFF)
+option(USE_QT_SYSTEM "Use Qt system" OFF) # https://www.wagavulin.jp/entry/2011/11/27/222650
+set(USE_QT_SYSTEM ON)
 
 # Create Project
 get_filename_component(ProjectId ${CMAKE_CURRENT_SOURCE_DIR} NAME) # https://stackoverflow.com/questions/12344368/automatically-use-the-directory-as-the-project-name-in-cmake

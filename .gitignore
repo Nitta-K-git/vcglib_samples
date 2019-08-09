@@ -43,3 +43,6 @@ target_wrapper.*
 CMakeLists.txt.user*
 
 *build*
+*.exe
+*.pdb
+*.ilk

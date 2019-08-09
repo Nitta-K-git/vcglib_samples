@@ -3,6 +3,7 @@
 #include <wrap/io_trimesh/import.h>
 #include <wrap/io_trimesh/export_ply.h>
 #include <vcg/simplex/face/pos.h>
+#include <vcg/complex/algorithms/hole.h> // 境界線特定用の関数がある
 
 #include <iostream>
 
@@ -15,10 +16,7 @@
 using namespace vcg;
 
 int main(int argc,char ** argv){
-	if(argc < 2 ){
-		printf("Usage: trimesh_harmonic mesh.ply\nuse octahedron.ply\n");
-	}
-	const char *fname = "oct_del.ply";
+	const char *fname = "2hole.ply";
 	
 	CMeshO m;
 	m.vert.EnableVFAdjacency();
@@ -26,82 +24,24 @@ int main(int argc,char ** argv){
 	m.face.EnableVFAdjacency();
 	
 	//open ply
-	int ret= tri::io::ImporterPLY<CMeshO>::Open(m,(argc<2)?fname:argv[1]);
-	if(ret!=0){
-		printf("Unable to open %s for '%s'\n",argv[1],tri::io::ImporterPLY<CMeshO>::ErrorMsg(ret));
-		return -1;
-	}
-	
-	// ポインタからインデックス返す配列作成
-	vcg::SimpleTempData<typename CMeshO::VertContainer, unsigned int> vert_indices(m.vert);
-	vcg::SimpleTempData<typename CMeshO::FaceContainer, unsigned int> face_indices(m.face);
-	unsigned int i=0;
-	CMeshO::VertexIterator vi;
-	for(i=0,vi=m.vert.begin(); vi!=m.vert.end(); ++vi,++i){
-		vert_indices[vi] = i; // vertex point to vertex index
-	}
-	CMeshO::FaceIterator fi;
-	for(i=0,fi=m.face.begin(); fi!=m.face.end(); ++fi,++i){
-		face_indices[fi] = i; // face point to face index
-	}
+	int ret= tri::io::ImporterPLY<CMeshO>::Open(m,fname);
+	if(ret!=0){return -1;}
 	
 	tri::UpdateTopology<CMeshO>::FaceFace(m);
-	tri::UpdateTopology<CMeshO>::VertexFace(m);
 	
-	// 境界線要素選択
-	tri::UpdateFlags<CMeshO>::FaceBorderFromNone(m);
-	tri::UpdateFlags<CMeshO>::VertexBorderFromFaceBorder(m);
-	tri::UpdateSelection<CMeshO>::FaceFromBorderFlag(m);
-	tri::UpdateSelection<CMeshO>::VertexFromBorderFlag(m);
+	std::vector<tri::Hole<CMeshO>::Info> vinfo;
+	tri::Hole<CMeshO>::GetInfo(m, false, vinfo);
+	std::vector<tri::Hole<CMeshO>::Info>::iterator ith;
 	
-	// 選択要素数をカウント(meshlabのml_selection_buffers.cppで実装されているが、これimportするとmeshlabのデータ丸ごと入れないといけないので、最低限の部分を自前で実装する)
-	m.sfn = 0;
-	m.svn = 0;
-	for(CFaceO &ff:m.face){
-		if(!ff.IsD() && ff.IsS()){
-			m.sfn++;
-		}
+	for(ith = vinfo.begin(); ith!= vinfo.end(); ++ith){
+		std::cout << "boundary size: " << (*ith).size << std::endl;
+		std::vector<CMeshO::FacePointer *> facePtrToBeUpdated;
+		vcg::face::Pos<CFaceO> ip = (*ith).p;
+		do{
+			std::cout << tri::Index(m, ip.V()) << ", ";
+			ip.NextB();
+		}while(ip != (*ith).p);
+		std::cout << std::endl;
 	}
-	for(CVertexO &vv:m.vert){
-		if(!vv.IsD() && vv.IsS()){
-			m.svn++;
-		}
-	}
-	std::cout << "selected face:vertex = " << m.sfn << ":" << m.svn << std::endl;
-	
-	// 境界線の巡回 選択された頂点の適当なものを選んで巡回していく。巡回済みのものは選択解除する
-	CVertexO *v = nullptr;
-	for(CVertexO &vv:m.vert){
-		if(!vv.IsD() && vv.IsS()){
-			v = &vv;
-			break;
-		}
-	}
-	face::Pos<CMeshO::FaceType> p;
-	if(v){
-		p.Set(v->VFp(), v);
-		if(!p.IsBorder()){p.FlipE();} // 選択された辺がborderでない場合は1回Flipすればよい
-		if(p.IsBorder()){
-			std::cout << "start border:" << vert_indices[v] << std::endl;
-			while(1){
-				p.V()->ClearS(); // 選択解除
-				p.NextB();
-				std::cout << vert_indices[p.V()] << ", ";
-				if(v == p.V() || !p.IsBorder() || !p.V()->IsS()){break;}
-			}
-			std::cout << std::endl;
-		}
-	}
-
-	// 選択状態再度確認
-	m.sfn = 0;
-	m.svn = 0;
-	for(CFaceO &ff:m.face){
-		if(!ff.IsD() && ff.IsS()){m.sfn++;}
-	}
-	for(CVertexO &vv:m.vert){
-		if(!vv.IsD() && vv.IsS()){m.svn++;}
-	}
-	std::cout << "selected face:vertex = " << m.sfn << ":" << m.svn << std::endl;
 	return 0;
 }

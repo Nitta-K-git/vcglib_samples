@@ -28,3 +28,10 @@ C:\Users\nitta\Documents\GitLab\vcglib>git branch
 
 # サンプルファイル
 
+## 015_attr_sample
+
+参考リンク
+
+- [trimesh_attribute.cpp](http://www.vcglib.net/trimesh__attribute_8cpp_source.html)
+- [Allocating and Deleting mesh elements](http://www.vcglib.net/allocation.html)
+
