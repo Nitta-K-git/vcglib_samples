@@ -278,3 +278,14 @@ vcglibで出来るデータ処理の例
 - [trimesh_attribute.cpp](http://www.vcglib.net/trimesh__attribute_8cpp_source.html)
 - [Allocating and Deleting mesh elements](http://www.vcglib.net/allocation.html)
 
+## 020_trackball
+
+トラックボール表示するだけのサンプル
+
+視点操作はトラックボール使うと楽にできるが、固定シェーダ前提になる
+
+## 021_trackball_mesh
+
+トラックボールとメッシュデータ表示するサンプル
+
+光源用の処理も追加
