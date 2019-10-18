@@ -289,3 +289,97 @@ vcglibで出来るデータ処理の例
 トラックボールとメッシュデータ表示するサンプル
 
 光源用の処理も追加
+
+---
+
+# Tips
+
+## プログラムの雛形
+
+### vcglib only
+
+- 環境変数に以下を設定しておく(パスは各自の環境に合わせること)
+  - VCGLIB_DIR C:/Users/nitta/Documents/GitLab/vcglib
+  - EIGEN_ROOT C:/Users/nitta/Documents/GitLab/vcglib/eigenlib
+
+```cmake
+cmake_minimum_required(VERSION 3.0)
+project(proj_name CXX)
+
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
+include_directories(${VCGLIB_DIR})
+message(${VCGLIB_DIR})
+
+include_directories(${EIGEN_ROOT})
+message(${EIGEN_ROOT})
+
+add_executable(exe_name
+	main.cpp
+)
+```
+
+```cpp
+#include<vcg/complex/allocate.h>
+
+class MyFace;
+class MyVertex;
+
+struct MyUsedTypes : public vcg::UsedTypes<	vcg::Use<MyVertex>::AsVertexType, vcg::Use<MyFace>::AsFaceType> {};
+class MyVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::BitFlags, vcg::vertex::VFAdj> {};
+class MyFace : public vcg::Face< MyUsedTypes, vcg::face::VertexRef, vcg::face::VFAdj> {};
+class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
+
+int main(){
+	MyMesh mesh;
+	return 1;
+}
+```
+
+### with QGLWidget
+
+
+
+## 頂点、面のインデックス取得
+
+```cpp
+std::cout << vcg::tri::Index(mesh, fp) << std::endl;
+std::cout << vcg::tri::Index(mesh, vp) << std::endl;
+```
+
+## イテレータ処理
+
+```cpp
+for(CMeshO::VertexIterator vi=mesh.vert.begin(); vi!=mesh.vert.end(); ++vi){
+    // vi->
+}
+for(CMeshO::FaceIterator fi=mesh.face.begin(); fi!=mesh.face.end(); ++fi){
+    // fi->
+}
+for(auto &&vp:mesh.vert){ // vertex pointer
+    // vp->
+}
+for(auto &&fp:mesh.face){ // face pointer
+    // fp->
+}
+```
+
+## 法線計算
+
+
+
+## Non manifoldの削除
+
+
+
+## プリセットオブジェクトの生成
+
+```cpp
+#include<vcg/complex/algorithms/create/platonic.h>
+
+MyMesh mesh;
+vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
+```
+
+
+

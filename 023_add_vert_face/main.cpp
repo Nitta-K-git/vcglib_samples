@@ -8,6 +8,8 @@
 #include<iostream>
 #include <vcg/complex/allocate.h>
 
+#include <vcg/complex/append.h>
+
 using namespace vcg;
 using namespace std;
 
@@ -34,6 +36,8 @@ class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
  *		頂点確保時のイテレータがあれば、頂点インデックスはそのまま使える
  * 
  * 選択要素など特定の要素のみコピーしたい場合は、deepcopy→compactなどしてからメッシュ丸ごとコピーが一番楽
+ *  MyMesh m2;
+	vcg :: tri :: Append <MyMesh、MyMesh> :: MeshCopy（m2、m）;
 */
 
 template<class MyMesh>
@@ -72,6 +76,11 @@ int main(int argc, char ** argv){
 	std::cout << m1.vn << ":" << m1.fn << std::endl;
 	
 	tri::io::ExporterPLY<MyMesh>::Save(m1,"outm1.ply",tri::io::Mask::IOM_NONE, false);
+	
+	
+	MyMesh m3;
+	vcg::tri::Append<MyMesh, MyMesh>::MeshCopy(m3, m1, true, false); // 上書きされる
+	vcg::tri::Append<MyMesh, MyMesh>::Mesh(m3, m1, true, false); // 追加される
 	
 	return 0;
 }
