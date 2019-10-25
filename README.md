@@ -381,5 +381,46 @@ MyMesh mesh;
 vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
 ```
 
+## 計算機能
+
+### 2点間距離
+
+```cpp
+float l01 = vcg::SquaredDistance(fp->P(0), fp->P(1));
+```
+
+### 2点間の角度
+
+```cpp
+vcg::Point3f n0 = f->N();		// get normal vector
+vcg::Point3f n1 = f->FFp(0)->N();
+MESHLAB_SCALAR ang = vcg::Angle(n0, n1);
+```
+
+### 点と面の距離
+
+
+
+### メッシュ間の干渉判定
+
+
+
+### 隣接面の取得
+
+```cpp
+for(int i=0; i<3; ++i){
+    CMeshO::FacePointer fadj = f->FFp(i);
+}
+```
+
+### ラジアンと度数の変換
+
+```cpp
+#include <vcg/math/base.h>
+
+```
+
+
+
 
 
