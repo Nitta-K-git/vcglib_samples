@@ -381,12 +381,64 @@ MyMesh mesh;
 vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
 ```
 
+## 変換行列の作成例
+
+```cpp
+// C:\Users\nitta\Documents\GitHub\meshlab\src\meshlabplugins\filter_meshing\meshfilter.cpp
+case FP_ROTATE :
+{
+    Matrix44m trRot, trTran, trTranInv, transfM;
+    Point3m axis, tranVec;
+
+    switch(par.getEnum("rotAxis"))
+    {
+        case 0: axis=Point3m(1,0,0); break;
+        case 1: axis=Point3m(0,1,0);break;
+        case 2: axis=Point3m(0,0,1);break;
+        case 3: axis=par.getPoint3m("customAxis");break;
+    }
+    switch(par.getEnum("rotCenter"))
+    {
+        case 0: tranVec=Point3m(0,0,0); break;
+        case 1: tranVec= m.cm.Tr * m.cm.bbox.Center(); break;
+        case 2: tranVec=par.getPoint3m("customCenter");break;
+    }
+
+    float angleDeg= par.getDynamicFloat("angle");
+    float snapAngle = par.getFloat("snapAngle");
+    if(par.getBool("snapFlag"))
+    { 
+        angleDeg = floor(angleDeg / snapAngle)*snapAngle;
+        par.setValue("angle", DynamicFloatValue(angleDeg));
+    }
+
+    trRot.SetRotateDeg(angleDeg,axis);
+    trTran.SetTranslate(tranVec);
+    trTranInv.SetTranslate(-tranVec);
+    transfM = trTran*trRot*trTranInv;
+
+    ApplyTransform(md,transfM,par.getBool("allLayers"),par.getBool("Freeze"));  
+
+} break;
+```
+
+
+
+## 変換行列の適用
+
+```cpp
+tri::UpdatePosition<CMeshO>::Matrix(m->cm, m->cm.Tr,true);
+tri::UpdateBounding<CMeshO>::Box(m->cm);
+m->cm.Tr.SetIdentity();
+```
+
 ## 計算機能
 
 ### 2点間距離
 
 ```cpp
-float l01 = vcg::SquaredDistance(fp->P(0), fp->P(1));
+float l01d = vcg::SquaredDistance(fp->P(0), fp->P(1)); // 二乗距離
+float l01 = vcg::Distance(fp->P(0), fp->P(1));
 ```
 
 ### 2点間の角度
@@ -399,11 +451,40 @@ MESHLAB_SCALAR ang = vcg::Angle(n0, n1);
 
 ### 点と面の距離
 
+```cpp
+vcg::Plane3f plate;
 
+Point3m a(0,0,10),b(10,0,10),c(0,10,10);
+plate.Init(a,b,c);
+
+Point3m p(10,10,0);
+Point3m q = plate.Projection(p); // 点から面への垂線の交点
+float l = vcg::SignedDistancePlanePoint(plate, p); // 点と面の距離
+```
+
+### 点と線の距離
+
+```cpp
+Point3m orig(0,0,0);
+Point3m dir(10,0,0);
+vcg::Line3f line(orig, dir);
+// 2点で作る場合
+Point3m A0,A1;
+vcg::Line3f line(A0, A1-A0);
+
+Point3m p(10,10,0);
+Point3m q = line.ClosestPoint(p); // 点から直線への垂線の座標
+
+float a = vcg::Distance(line, p); // 点と直線の距離
+```
 
 ### メッシュ間の干渉判定
 
-
+```cpp
+// mesh1においてmesh2との干渉面が選択される(mesh2はそのまま)
+mesh2.face.EnableMark();
+int a = vcg::tri::Clean<CMeshO>::SelectIntersectingFaces(mesh1, mesh2);
+```
 
 ### 隣接面の取得
 
@@ -417,6 +498,30 @@ for(int i=0; i<3; ++i){
 
 ```cpp
 #include <vcg/math/base.h>
+float a = vcg::math::ToRad(90.0f);
+float b = vcg::math::ToDeg(a);
+```
+
+### Quaternion
+
+```cpp
+Point3m p(10,10,10);
+Point3m z(0,0,10);
+vcg::Quaternionf qua(vcg::math::ToRad(90.0f),z); // ベクトルz方向を中心に90度回転するクォータニオン(回転は原点中心)
+Point3m q = qua.Rotate(p);
+
+// ベクトルAをベクトルBに重ねる処理
+vcg::Quaternionf qua(vcg::Angle(A,B),A^B);
+Point3m q = qua.Rotate(A);
+```
+
+メッシュの座標変換
+
+```cpp
+Matrix44m M;
+M.SetTranslate(Point3m(1,1,1));
+vcg::tri::UpdatePosition<CMeshO>::Matrix(mesh, M);
+vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
 ```
 
