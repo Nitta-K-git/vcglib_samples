@@ -368,6 +368,34 @@ for(auto &&fp:mesh.face){ // face pointer
 
 
 
+## 選択した面につながっている面を再帰的に選択
+
+```cpp
+vcg::tri::UpdateSelection<CMeshO>::FaceConnectedFF(mesh);
+```
+
+## 面と頂点の間の選択状態を共有
+
+```cpp
+// 選択された面に属する頂点を選択(OR) (Select all the vertices that are touched by at least a single selected faces)
+cnt = vcg::tri::UpdateSelection<CMeshO>::VertexFromFaceLoose(mesh); 
+// 選択された面に属する頂点を選択(AND) (Select all the vertices having all the faces incident on them selected)
+cnt = vcg::tri::UpdateSelection<CMeshO>::VertexFromFaceStrict(mesh); 
+```
+
+## 選択状態のクリア
+
+```cpp
+vcg::tri::UpdateFlags<CMeshO>::FaceClearS(mesh);
+```
+
+## 面、頂点の削除
+
+```cpp
+vcg::tri::Allocator<CMeshO>::DeleteFace(mesh, *fi);
+vcg::tri::Allocator<CMeshO>::DeleteVertex(mesh, *vi);
+```
+
 ## Non manifoldの削除
 
 
