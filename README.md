@@ -364,6 +364,30 @@ for(auto &&fp:mesh.face){ // face pointer
 }
 ```
 
+## 頂点、面の追加
+
+```cpp
+void appendMesh(MyMesh &m1, MyMesh &m2){ // dst, src
+	auto vi = vcg::tri::Allocator<MyMesh>::AddVertices(m1, m2.VN()); // 最初に追加する頂点数を丸ごと確保してから、座標値を代入
+	std::cout << m1.vn << ":" << m1.fn << std::endl;
+	for(int i=0; i<m2.VN(); ++i){
+		vi[i].P() = m2.vert[i].P();
+	}
+	std::cout << m1.vn << ":" << m1.fn << std::endl;
+	auto fi = vcg::tri::Allocator<MyMesh>::AddFaces(m1, m2.FN()); // fiは追加する開始点から始まるなので、追加元のデータインデックスをそのまま使える
+	std::cout << m1.vn << ":" << m1.fn << std::endl;
+	for(int i=0; i<m2.FN(); ++i){
+		int idx0 = vcg::tri::Index(m2, m2.face[i].V(0));
+		int idx1 = vcg::tri::Index(m2, m2.face[i].V(1));
+		int idx2 = vcg::tri::Index(m2, m2.face[i].V(2));
+		std::cout << idx0 << ":" << idx1 << ":" << idx2 << std::endl;
+		fi[i].V(0) = &vi[idx0];
+		fi[i].V(1) = &vi[idx1];
+		fi[i].V(2) = &vi[idx2];
+	}
+}
+```
+
 ## 法線計算
 
 
