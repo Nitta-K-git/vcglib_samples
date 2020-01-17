@@ -158,6 +158,105 @@ C:\Users\nitta\Documents\GitHub\vcglib_samples\000_simple_template\build>Debug\v
 
 # 使い方
 
+## cmake
+
+vcglibはcmake用のファイルを提供していないので、find_packageのコマンドは使えない。ヘッダファイルを追加する形で行う。
+
+最小サンプル
+
+```cmake
+cmake_minimum_required( VERSION 3.6 )
+
+project(sample_proj CXX)
+
+find_package(Eigen3)
+
+add_executable(${PROJECT_NAME})
+target_sources(${PROJECT_NAME}
+  PRIVATE
+    main.cpp
+)
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    C:/Users/nitta/Documents/GitLab/vcglib
+)
+target_link_libraries(${PROJECT_NAME} 
+  Eigen3::Eigen
+)
+```
+
+テンプレート用
+
+```cmake
+cmake_minimum_required( VERSION 3.6 )
+
+# Create Project
+get_filename_component(ProjectId ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+string(REPLACE " " "_" ProjectId ${ProjectId})
+project(${ProjectId} CXX)
+message(${ProjectId})
+
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
+find_package(Eigen3)
+
+if(NOT CMAKE_DEBUG_POSTFIX)
+  set(CMAKE_DEBUG_POSTFIX d)
+endif()
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
+
+# Add Executable
+add_executable(${PROJECT_NAME})
+target_sources(${PROJECT_NAME}
+  PRIVATE
+    main.cpp
+)
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    C:/Users/nitta/Documents/GitLab/vcglib
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+
+target_link_libraries(${PROJECT_NAME} 
+  Eigen3::Eigen
+)
+```
+
+main.cppサンプル
+
+```cpp
+#include<vcg/complex/algorithms/create/platonic.h>
+#include<vcg/complex/allocate.h>
+
+class MyFace;
+class MyVertex;
+
+struct MyUsedTypes : public vcg::UsedTypes<	vcg::Use<MyVertex>::AsVertexType, vcg::Use<MyFace>::AsFaceType> {};
+class MyVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::BitFlags, vcg::vertex::VFAdj> {};
+class MyFace : public vcg::Face< MyUsedTypes, vcg::face::VertexRef, vcg::face::VFAdj> {};
+class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
+
+int main(){
+	MyMesh mesh;
+	vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
+	
+	MyMesh::FaceIterator fi;
+	for(fi=mesh.face.begin(); fi!=mesh.face.end(); ++fi){ // メッシュの各面を巡回する
+		std::cout << vcg::tri::Index(mesh, *fi) << ": "; // 面のインデックスを取得
+		for(int i=0; i<fi->VN(); ++i){ // 面の各頂点を巡回する
+			std::cout << vcg::tri::Index(mesh, fi->V(i)) << ","; // 頂点のインデックスを取得
+		}
+		std::cout << std::endl;
+	}
+	return 1;
+}
+```
+
+
+
 ## ファイルの入出力
 
 参考：[VCG Library: File Formats](http://vcg.isti.cnr.it/vcglib/fileformat.html])
@@ -474,7 +573,30 @@ case FP_ROTATE :
 } break;
 ```
 
+## Eigenとの変換
 
+```cpp
+template <typename T>
+using RMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+typedef RMatrix<MESHLAB_SCALAR> RMatrixm;
+using RefRMatrix = Eigen::Ref<const RMatrixm>;
+using EVector = Eigen::Vector3f;
+```
+
+```cpp
+vcg::Quaternionf qua(vcg::Angle(y01,Y),y01^Y);
+Matrix44m M;
+RMatrixm eigenM = RMatrixm::Identity(4,4); // 初期化時にサイズを指定すること
+qua.ToMatrix(M);
+M.ToEigenMatrix<RMatrixm>(eigenM);
+```
+
+```cpp
+Matrix44m M;
+M.FromEigenMatrix<Eigen::Ref<const RMatrixm>>(ME);
+vcg::tri::UpdatePosition<CMeshO>::Matrix(a.mesh, M);
+vcg::tri::UpdateBounding<CMeshO>::Box(a.mesh);
+```
 
 ## 変換行列の適用
 
