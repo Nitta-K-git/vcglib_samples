@@ -1,34 +1,29 @@
-# vcglib_sample
-vcglib basic samples
+# vcglib_samples
+vcglibとMeshLabのソースコードのサンプル集
 
-# 概要
-
-公式サイト
-
-- [VCG Library: The VCG Library](http://vcg.isti.cnr.it/vcglib/)
-- [cnr-isti-vclab/vcglib: The VCGlib is a C++, templated, no dependency, library for manipulation, processing and cleaning of triangle meshes](https://github.com/cnr-isti-vclab/vcglib)
-
-オープンソースのメッシュデータ処理用のライブラリ。GPLライセンス。
-
-三角形のメッシュデータを主に想定している。データ構造はOpenMeshに似ているが、機能はvcglibの方が豊富である。
-
-meshlabはvcglibベースに作成されている。
-
-# 環境構築
-
-以下の環境で動作確認をした。
-
-- Windows10 64bit
-- [Qt 5.13](https://www.qt.io/download)
-- cmake 3.15.0
-- Visual Studio 2017
-
-## ダウンロード
-
-vcglibのgitから最新版をダウンロードする。branchはmasterではなくdevelにする(masterブランチは更新が止まっている。meshlabでもdevelが使用されている)。
+# Introduction
 
 ```
-C:\Users\nitta\Documents\GitLab>git clone -b devel https://github.com/cnr-isti-vclab/vcglib.git
+The Visualization and Computer Graphics Library (VCG for short) is a open source portable C++ templated library for manipulation, processing and displaying with OpenGL of triangle and tetrahedral meshes.
+```
+
+- [VCG Library](http://vcg.isti.cnr.it/vcglib/)([Github](https://github.com/cnr-isti-vclab/vcglib))
+- [meshlab](https://www.meshlab.net/)([Github](https://github.com/cnr-isti-vclab/meshlab))
+
+# Get started
+
+## requirements
+
+- cmake
+- C++ compiler(visual studio, gcc, ... etc.)
+- Qt (not necessary but it's easy to visualize)
+
+## Get library from github
+
+Clone vcglib from github. You should select `devel`branch (`master` branch is too old).
+
+```
+$ git clone -b devel https://github.com/cnr-isti-vclab/vcglib.git
 Cloning into 'vcglib'...
 remote: Enumerating objects: 5, done.
 remote: Counting objects: 100% (5/5), done.
@@ -38,121 +33,72 @@ Receiving objects: 100% (42007/42007), 17.24 MiB | 1.23 MiB/s, done.
 Resolving deltas: 100% (28087/28087), done.
 Checking out files: 100% (1063/1063), done.
 
-C:\Users\nitta\Documents\GitLab>cd vcglib
+$ cd vcglib
 
-C:\Users\nitta\Documents\GitLab\vcglib>git branch
+$ git branch
 * devel
 ```
 
-## cmakeの作成(サンプル)
+## build
 
-CMakeLists.txt
+see this [CODE](./samples/hello_mesh).
 
-```cmake
-cmake_minimum_required(VERSION 3.0)
-project(simple_template CXX) # (プロジェクト名 言語指定(CXXはC++))
+# Samples
 
-add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>") # Visual Studio用設定。ソースファイルの文字コードをUTF-8に変更
+## Data structure
 
-set( VCGLIB_DIR C:/Users/nitta/Documents/GitLab/vcglib) # ディレクトリのパスは各自の環境に合わせる
-include_directories(${VCGLIB_DIR})
-message(${VCGLIB_DIR})
+- access mesh vertices/faces pointer : [CODE]()
+- access mesh vertices/faces indices : [CODE]()
+- set select flag of vertices/faces : [CODE]()
+- get neighbor of vertices/faces : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
 
-set( EIGEN_ROOT C:/Users/nitta/Documents/GitLab/vcglib/eigenlib) # ディレクトリのパスは各自の環境に合わせる
-include_directories(${EIGEN_ROOT})
-message(${EIGEN_ROOT})
 
-add_executable(vcg_test # exe name
-	main.cpp	# 必要なcpp,hファイルを入れていく
-)
-```
 
-## サンプルプログラムの作成・動作確認
+## Read/Write file
 
-main.cpp
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
 
-```cpp
-#include<vcg/complex/algorithms/create/platonic.h>
-#include<vcg/complex/allocate.h>
 
-class MyFace;
-class MyVertex;
 
-struct MyUsedTypes : public vcg::UsedTypes<	vcg::Use<MyVertex>::AsVertexType, vcg::Use<MyFace>::AsFaceType> {};
-class MyVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::BitFlags, vcg::vertex::VFAdj> {};
-class MyFace : public vcg::Face< MyUsedTypes, vcg::face::VertexRef, vcg::face::VFAdj> {};
-class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
 
-int main(){
-	MyMesh mesh;
-	vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
-	
-	MyMesh::FaceIterator fi;
-	for(fi=mesh.face.begin(); fi!=mesh.face.end(); ++fi){ // メッシュの各面を巡回する
-		std::cout << vcg::tri::Index(mesh, *fi) << ": "; // 面のインデックスを取得
-		for(int i=0; i<fi->VN(); ++i){ // 面の各頂点を巡回する
-			std::cout << vcg::tri::Index(mesh, fi->V(i)) << ","; // 頂点のインデックスを取得
-		}
-		std::cout << std::endl;
-	}
-	return 1;
-}
-```
+## Basic algorithm (vcglib functions)
 
-以下のフォルダ構成で置く。
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
 
-```
-.
-├── CMakeLists.txt
-├── main.cpp
-└── build/
-```
 
-buildフォルダ内でコンパイルする。
 
-```
-C:\Users\nitta\Documents\GitHub\vcglib_samples\000_simple_template\build>cmake .. -G"Visual Studio 15 2017 Win64"
--- Selecting Windows SDK version 10.0.17763.0 to target Windows 10.0.17134.
--- The CXX compiler identification is MSVC 19.16.27031.1
--- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx86/x64/cl.exe
--- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx86/x64/cl.exe -- works
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Detecting CXX compile features
--- Detecting CXX compile features - done
-C:/Users/nitta/Documents/GitLab/vcglib
-C:/Users/nitta/Documents/GitLab/vcglib/eigenlib
--- Configuring done
--- Generating done
--- Build files have been written to: C:/Users/nitta/Documents/GitHub/vcglib_samples/000_simple_template/build
+## Extra algorithm (implemented in MeshLab)
 
-C:\Users\nitta\Documents\GitHub\vcglib_samples\000_simple_template\build>cmake --build . --config Debug
-.NET Framework 向け Microsoft (R) Build Engine バージョン 15.9.21+g9802d43bc3
-Copyright (C) Microsoft Corporation.All rights reserved.
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
+-  : [CODE]()
 
-  Checking Build System
-  Building Custom Rule C:/Users/nitta/Documents/GitHub/vcglib_samples/000_simple_template/CMakeLists.txt
-  main.cpp
-C:\Users\nitta\Documents\GitLab\vcglib\wrap/callback.h(67): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for deta
-ils. [C:\Users\nitta\Documents\GitHub\vcglib_samples\000_simple_template\build\vcg_test.vcxproj]
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.17763.0\ucrt\string.h(133): note: 'strcpy' の宣言を確認してください
-  vcg_test.vcxproj -> C:\Users\nitta\Documents\GitHub\vcglib_samples\000_simple_template\build\Debug\vcg_test.exe
-  Building Custom Rule C:/Users/nitta/Documents/GitHub/vcglib_samples/000_simple_template/CMakeLists.txt
-```
 
-動作確認
 
-```
-C:\Users\nitta\Documents\GitHub\vcglib_samples\000_simple_template\build>Debug\vcg_test.exe
-0: 0,1,2,
-1: 0,2,4,
-2: 0,4,5,
-3: 0,5,1,
-4: 3,1,5,
-5: 3,5,4,
-6: 3,4,2,
-7: 3,2,1,
-```
+## Visualize with Qt
+
+
+
+
 
 ---
 
