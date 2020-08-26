@@ -4,10 +4,10 @@
 class MyFace;
 class MyVertex;
 
-struct MyUsedTypes : public vcg::UsedTypes<	vcg::Use<MyVertex>::AsVertexType, vcg::Use<MyFace>::AsFaceType> {};
-class MyVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::BitFlags, vcg::vertex::VFAdj> {};
-class MyFace : public vcg::Face< MyUsedTypes, vcg::face::VertexRef, vcg::face::VFAdj> {};
-class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
+struct MyUsedTypes : public UsedTypes<	Use<MyVertex>::AsVertexType, Use<MyFace>::AsFaceType> {};
+class MyVertex : public Vertex< MyUsedTypes, vertex::Coord3f, vertex::BitFlags, vertex::VFAdj> {};
+class MyFace : public Face< MyUsedTypes, face::VertexRef, face::VFAdj, face::BitFlags> {};
+class MyMesh : public tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
 
 int main(){
 	MyMesh mesh;
