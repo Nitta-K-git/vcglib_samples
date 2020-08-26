@@ -1,5 +1,5 @@
 # vcglib_samples
-vcglibとMeshLabのソースコードのサンプル集
+sample codes of vcglib and MeshLab function.
 
 # Introduction
 
@@ -12,11 +12,12 @@ The Visualization and Computer Graphics Library (VCG for short) is a open source
 
 # Get started
 
-## requirements
+## Requirements
 
-- cmake
+- [cmake](https://cmake.org/)
+- [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
 - C++ compiler(visual studio, gcc, ... etc.)
-- Qt (not necessary but it's easy to visualize)
+- [Qt](https://www.qt.io/jp) (not necessary but it's easy to visualize)
 
 ## Get library from github
 
@@ -39,33 +40,29 @@ $ git branch
 * devel
 ```
 
-## build
+## How to build with cmake
 
-see this [CODE](./samples/hello_mesh).
+see this [sample](./samples/hello_mesh).
 
 # Samples
 
 ## Data structure
 
-- access mesh vertices/faces pointer : [CODE]()
-- access mesh vertices/faces indices : [CODE]()
+- access mesh vertices/faces : [CODE]()
 - set select flag of vertices/faces : [CODE]()
 - get neighbor of vertices/faces : [CODE]()
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
+-  OCC? : [CODE]()
+-   : [CODE]()
+-   : [CODE]()
+-   : [CODE]()
+-   : [CODE]()
 
 
 
 ## Read/Write file
 
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
+-  read and write basic file formats :  [CODE](./samples/read_write_file)
+-  create preset object : [CODE](./samples/create_preset_obj)
 
 
 
@@ -83,6 +80,10 @@ see this [CODE](./samples/hello_mesh).
 
 
 ## Extra algorithm (implemented in MeshLab)
+
+MeshLabのデータ構造定義ファイルを使用する
+
+必要なヘッダファイルは [ml_mesh_type.h](https://github.com/cnr-isti-vclab/meshlab/blob/master/src/common/ml_mesh_type.h) のみ
 
 -  : [CODE]()
 -  : [CODE]()
