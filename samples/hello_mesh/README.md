@@ -2,6 +2,8 @@
 
 CMakeLists.txt
 
+- target_include_directories : set the proper path for Eigen and vcglib
+
 ```cmake
 cmake_minimum_required( VERSION 3.6 )
 
@@ -40,6 +42,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POS
 ```
 
 main.cpp
+
+- In vcglib, data types such as vertices and faces are defined by yourself ([Reference](http://vcg.isti.cnr.it/vcglib/basic_concepts.html))
 
 ```cpp
 #include<vcg/complex/algorithms/create/platonic.h>
