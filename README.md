@@ -48,14 +48,13 @@ see this [sample](./samples/hello_mesh).
 
 ## Data structure
 
-- access mesh vertices/faces : [CODE]()
-- set select flag of vertices/faces : [CODE]()
-- get neighbor of vertices/faces : [CODE]()
--  OCC? : [CODE]()
--   : [CODE]()
--   : [CODE]()
--   : [CODE]()
--   : [CODE]()
+- template data structure : [CODE](./samples/template)
+- template data structure from MeshLab : [CODE](./samples/template_meshlab)
+- access mesh vertices/faces : [CODE](./samples/iterator)
+- set flag of vertices/faces : [CODE](./samples/flags)
+- get adjacent vertices/faces : [CODE](./samples/adjacent)
+-  create mesh using just a vector of coords and a vector of indexes : [CODE](./samples/create_mesh_manually)
+-  occ : [CODE]()
 
 
 
