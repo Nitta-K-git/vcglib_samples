@@ -28,6 +28,7 @@ int main(){
 	MyMesh mesh;
 	vcg::tri::Tetrahedron(mesh); // create preset mesh data
 	
+	cout << "vert" << endl;
 	// set selected flag manually
 	MyMesh::VertexPointer vp;
 	vp = &(mesh.vert[0]);
@@ -39,6 +40,18 @@ int main(){
 	MyMesh::VertexIterator vi;
 	for(auto &&vi : mesh.vert){
 		cout << vi.IsS() << endl;
+	}
+
+	cout << "face" << endl;
+	// set selected flag manually
+	MyMesh::FacePointer fp;
+	fp = &(mesh.face[0]);
+	fp->SetS();
+	
+	// get all selected flag state
+	MyMesh::FaceIterator fi;
+	for(auto &&fi : mesh.face){
+		cout << fi.IsS() << endl;
 	}
 	return 1;
 }
