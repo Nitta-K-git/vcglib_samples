@@ -74,10 +74,11 @@ see this [sample](./samples/hello_mesh) for details.
 
 ## Basic algorithm (vcglib functions)
 
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
--  : [CODE]()
+-  convert degree and radian: [CODE](./samples/conv_deg_and_rad)
+-  distance between two points : [CODE](./samples/dist_two_points)
+-  distance between point and line : [CODE](./samples/dist_point_line)
+-  distance between point and plane : [CODE](./samples/dist_point_plane)
+-  angle between two vectors : [CODE](./samples/angle_two_vector)
 -  : [CODE]()
 -  : [CODE]()
 -  : [CODE]()
@@ -173,12 +174,6 @@ cnt = vcg::tri::UpdateSelection<CMeshO>::VertexFromFaceLoose(mesh);
 cnt = vcg::tri::UpdateSelection<CMeshO>::VertexFromFaceStrict(mesh); 
 ```
 
-## 選択状態のクリア
-
-```cpp
-vcg::tri::UpdateFlags<CMeshO>::FaceClearS(mesh);
-```
-
 ## 面、頂点の削除
 
 ```cpp
@@ -262,23 +257,6 @@ tri::UpdateBounding<CMeshO>::Box(m->cm);
 m->cm.Tr.SetIdentity();
 ```
 
-## 計算機能
-
-### 2点間距離
-
-```cpp
-float l01d = vcg::SquaredDistance(fp->P(0), fp->P(1)); // 二乗距離
-float l01 = vcg::Distance(fp->P(0), fp->P(1));
-```
-
-### 2点間の角度
-
-```cpp
-vcg::Point3f n0 = f->N();		// get normal vector
-vcg::Point3f n1 = f->FFp(0)->N();
-MESHLAB_SCALAR ang = vcg::Angle(n0, n1);
-```
-
 ### 点と面の距離
 
 ```cpp
@@ -292,44 +270,12 @@ Point3m q = plate.Projection(p); // 点から面への垂線の交点
 float l = vcg::SignedDistancePlanePoint(plate, p); // 点と面の距離
 ```
 
-### 点と線の距離
-
-```cpp
-Point3m orig(0,0,0);
-Point3m dir(10,0,0);
-vcg::Line3f line(orig, dir);
-// 2点で作る場合
-Point3m A0,A1;
-vcg::Line3f line(A0, A1-A0);
-
-Point3m p(10,10,0);
-Point3m q = line.ClosestPoint(p); // 点から直線への垂線の座標
-
-float a = vcg::Distance(line, p); // 点と直線の距離
-```
-
 ### メッシュ間の干渉判定
 
 ```cpp
 // mesh1においてmesh2との干渉面が選択される(mesh2はそのまま)
 mesh2.face.EnableMark();
 int a = vcg::tri::Clean<CMeshO>::SelectIntersectingFaces(mesh1, mesh2);
-```
-
-### 隣接面の取得
-
-```cpp
-for(int i=0; i<3; ++i){
-    CMeshO::FacePointer fadj = f->FFp(i);
-}
-```
-
-### ラジアンと度数の変換
-
-```cpp
-#include <vcg/math/base.h>
-float a = vcg::math::ToRad(90.0f);
-float b = vcg::math::ToDeg(a);
 ```
 
 ### Quaternion
