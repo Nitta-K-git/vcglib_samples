@@ -33,10 +33,12 @@ int main(){
 	MyMesh::FaceIterator fi;
 	for(fi=mesh.face.begin(); fi!=mesh.face.end(); ++fi){ // iterate each faces
 		cout << "face : " << tri::Index(mesh, *fi) << endl; // get face index
+		// cout << fi->P(0).X() << endl; // get point
 	}
 	MyMesh::VertexIterator vi;
 	for(vi=mesh.vert.begin(); vi!=mesh.vert.end(); ++vi){
 		cout << "vert : " << tri::Index(mesh, *vi) << endl;
+		// cout << vi->P().X() << endl; // get point
 	}
 	
 	// via pointer
