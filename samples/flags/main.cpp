@@ -41,6 +41,9 @@ int main(){
 	for(auto &&vi : mesh.vert){
 		cout << vi.IsS() << endl;
 	}
+	
+	// clear all select flag
+	tri::UpdateFlags<MyMesh>::VertexClearS(mesh);
 
 	cout << "face" << endl;
 	// set selected flag manually
@@ -53,6 +56,10 @@ int main(){
 	for(auto &&fi : mesh.face){
 		cout << fi.IsS() << endl;
 	}
+	
+	// clear all select flag
+	tri::UpdateFlags<MyMesh>::FaceClearS(mesh);
+	
 	return 1;
 }
 
