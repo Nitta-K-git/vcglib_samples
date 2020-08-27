@@ -42,7 +42,13 @@ $ git branch
 
 ## How to build with cmake
 
-see this [sample](./samples/hello_mesh).
+First, you have to set below environment values
+
+- `VCGLIB_DIR` : path/to/vcglib (e.g. `C:/Users/Public/Documents/GitHub/vcglib`)
+- `MESHLAB_DIR` : path/to/MeshLab/source (e.g. `C:/Users/Public/Documents/GitHub/meshlab_latest/src`)
+- `EIGEN3_INCLUDE_DIR` : path/to/Eigen3 (e.g. `C:/eigen-3.3.7`)
+
+see this [sample](./samples/hello_mesh) for details.
 
 # Samples
 
@@ -54,7 +60,7 @@ see this [sample](./samples/hello_mesh).
 - set flag of vertices/faces : [CODE](./samples/flags)
 - get adjacent vertices/faces : [CODE](./samples/adjacent)
 -  create mesh using just a vector of coords and a vector of indexes : [CODE](./samples/create_mesh_manually)
--  occ : [CODE]()
+-  user defined attribute : [CODE](./samples/user_defined_attr)
 
 
 
@@ -80,10 +86,9 @@ see this [sample](./samples/hello_mesh).
 
 ## Extra algorithm (implemented in MeshLab)
 
-MeshLabのデータ構造定義ファイルを使用する
+use MeshLab data structure.
 
-必要なヘッダファイルは [ml_mesh_type.h](https://github.com/cnr-isti-vclab/meshlab/blob/master/src/common/ml_mesh_type.h) のみ
-
+-  template data structure from MeshLab : [CODE](./samples/template_meshlab)
 -  : [CODE]()
 -  : [CODE]()
 -  : [CODE]()
@@ -100,217 +105,7 @@ MeshLabのデータ構造定義ファイルを使用する
 
 
 
----
 
-# 使い方
-
-## cmake
-
-vcglibはcmake用のファイルを提供していないので、find_packageのコマンドは使えない。ヘッダファイルを追加する形で行う。
-
-最小サンプル
-
-```cmake
-cmake_minimum_required( VERSION 3.6 )
-
-project(sample_proj CXX)
-
-find_package(Eigen3)
-
-add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME}
-  PRIVATE
-    main.cpp
-)
-target_include_directories(${PROJECT_NAME}
-  PUBLIC
-    C:/Users/nitta/Documents/GitLab/vcglib
-)
-target_link_libraries(${PROJECT_NAME} 
-  Eigen3::Eigen
-)
-```
-
-テンプレート用
-
-```cmake
-cmake_minimum_required( VERSION 3.6 )
-
-# Create Project
-get_filename_component(ProjectId ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-string(REPLACE " " "_" ProjectId ${ProjectId})
-project(${ProjectId} CXX)
-message(${ProjectId})
-
-add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
-
-find_package(Eigen3)
-
-if(NOT CMAKE_DEBUG_POSTFIX)
-  set(CMAKE_DEBUG_POSTFIX d)
-endif()
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
-
-# Add Executable
-add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME}
-  PRIVATE
-    main.cpp
-)
-target_include_directories(${PROJECT_NAME}
-  PUBLIC
-    C:/Users/nitta/Documents/GitLab/vcglib
-)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
-
-target_link_libraries(${PROJECT_NAME} 
-  Eigen3::Eigen
-)
-```
-
-main.cppサンプル
-
-```cpp
-#include<vcg/complex/algorithms/create/platonic.h>
-#include<vcg/complex/allocate.h>
-
-class MyFace;
-class MyVertex;
-
-struct MyUsedTypes : public vcg::UsedTypes<	vcg::Use<MyVertex>::AsVertexType, vcg::Use<MyFace>::AsFaceType> {};
-class MyVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::BitFlags, vcg::vertex::VFAdj> {};
-class MyFace : public vcg::Face< MyUsedTypes, vcg::face::VertexRef, vcg::face::VFAdj> {};
-class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
-
-int main(){
-	MyMesh mesh;
-	vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
-	
-	MyMesh::FaceIterator fi;
-	for(fi=mesh.face.begin(); fi!=mesh.face.end(); ++fi){ // メッシュの各面を巡回する
-		std::cout << vcg::tri::Index(mesh, *fi) << ": "; // 面のインデックスを取得
-		for(int i=0; i<fi->VN(); ++i){ // 面の各頂点を巡回する
-			std::cout << vcg::tri::Index(mesh, fi->V(i)) << ","; // 頂点のインデックスを取得
-		}
-		std::cout << std::endl;
-	}
-	return 1;
-}
-```
-
-
-
-## ファイルの入出力
-
-参考：[VCG Library: File Formats](http://vcg.isti.cnr.it/vcglib/fileformat.html])
-
-対応しているファイル形式
-
-- import: PLY, STL, OFF, OBJ, 3DS, COLLADA, PTX, V3D, PTS, APTS, XYZ, GTS, TRI, ASC, X3D, X3DV, VRML, ALN
-- export: PLY, STL, OFF, OBJ, 3DS, COLLADA, VRML, DXF, GTS, U3D, IDTF, X3D
-
-### PLYファイルの入出力のサンプル
-
-
-
-## データアクセス方法
-
-### 面、頂点、エッジの各要素にアクセスする方法
-
-以下のように複数の方法が用意されているので、適宜使い分ける。
-
-- イテレータで巡回
-- インデックスで直接指定
-- ポインタで直接指定
-- 隣接関係を使用
-
-#### イテレータ
-
-```cpp
-#include<vcg/complex/algorithms/create/platonic.h>
-#include<vcg/complex/allocate.h>
-
-class MyFace;
-class MyVertex;
-
-struct MyUsedTypes : public vcg::UsedTypes<	vcg::Use<MyVertex>::AsVertexType, vcg::Use<MyFace>::AsFaceType> {};
-class MyVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::BitFlags, vcg::vertex::VFAdj> {};
-class MyFace : public vcg::Face< MyUsedTypes, vcg::face::VertexRef, vcg::face::VFAdj> {};
-class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
-
-int main(){
-	MyMesh mesh;
-	vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
-	
-	MyMesh::FaceIterator fi;
-	MyMesh::VertexIterator vi;
-	for(fi=mesh.face.begin(); fi!=mesh.face.end(); ++fi){
-		std::cout << vcg::tri::Index(mesh, *fi) << ",";
-	}
-	std::cout << std::endl;
-	for(vi=mesh.vert.begin(); vi!=mesh.vert.end(); ++vi){
-		std::cout << vcg::tri::Index(mesh, *vi) << ",";
-	}
-	std::cout << std::endl;
-	return 1;
-}
-```
-
-#### インデックスとポインタ
-
-```cpp
-	MyMesh::FacePointer fp;
-	MyMesh::VertexPointer vp;
-	fp = &mesh.face[1];
-	vp = &mesh.vert[1];
-	std::cout << vcg::tri::Index(mesh, fp) << "," << std::endl;
-	std::cout << vcg::tri::Index(mesh, vp) << "," << std::endl;
-```
-
-#### 隣接関係
-
-PosとVFIteratorの2種類ある。
-
-##### Pos
-
-メッシュ上の位置は面・頂点・辺で一意に決まる。これを表すデータ型がPosである。
-
-
-
-##### VFIterator
-
-頂点が属する面を巡回するためのもの。
-
-
-
-## データの可視化
-
-ライブラリ自体にビューワーは付属していないが、OpenGLとQtのQGLWidgetで使用するためのライブラリが用意されているため、それを使うのがおすすめ。
-
-
-
-
-
-## データ処理のサンプル
-
-vcglibで出来るデータ処理の例
-
-- Non Manifoldになっている箇所の検出
-- 頂点・面の追加・削除
-- スムージング
-- 曲率計算
-- 境界線の特定
-- 任意の頂点とエッジでつながっている頂点の探索
-- 任意の面とエッジを共有する面の探索
-- 各頂点・面・メッシュなどに対してユーザーの定義したデータ型を付加することが可能(頂点や面が追加・削除されると付属データも自動的に同期する)
-  - フラグ変数などを自由に追加することができる
-- 穴埋め
-- Qtとの連携前提で
-  - 面・頂点の範囲選択
-  - テキスト描画
 
 ---
 
@@ -339,76 +134,6 @@ vcglibで出来るデータ処理の例
 
 # Tips
 
-## プログラムの雛形
-
-### vcglib only
-
-- 環境変数に以下を設定しておく(パスは各自の環境に合わせること)
-  - VCGLIB_DIR C:/Users/nitta/Documents/GitLab/vcglib
-  - EIGEN_ROOT C:/Users/nitta/Documents/GitLab/vcglib/eigenlib
-
-```cmake
-cmake_minimum_required(VERSION 3.0)
-project(proj_name CXX)
-
-add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
-
-include_directories(${VCGLIB_DIR})
-message(${VCGLIB_DIR})
-
-include_directories(${EIGEN_ROOT})
-message(${EIGEN_ROOT})
-
-add_executable(exe_name
-	main.cpp
-)
-```
-
-```cpp
-#include<vcg/complex/allocate.h>
-
-class MyFace;
-class MyVertex;
-
-struct MyUsedTypes : public vcg::UsedTypes<	vcg::Use<MyVertex>::AsVertexType, vcg::Use<MyFace>::AsFaceType> {};
-class MyVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::BitFlags, vcg::vertex::VFAdj> {};
-class MyFace : public vcg::Face< MyUsedTypes, vcg::face::VertexRef, vcg::face::VFAdj> {};
-class MyMesh : public vcg::tri::TriMesh<vector<MyVertex>, vector<MyFace> > {};
-
-int main(){
-	MyMesh mesh;
-	return 1;
-}
-```
-
-### with QGLWidget
-
-
-
-## 頂点、面のインデックス取得
-
-```cpp
-std::cout << vcg::tri::Index(mesh, fp) << std::endl;
-std::cout << vcg::tri::Index(mesh, vp) << std::endl;
-```
-
-## イテレータ処理
-
-```cpp
-for(CMeshO::VertexIterator vi=mesh.vert.begin(); vi!=mesh.vert.end(); ++vi){
-    // vi->
-}
-for(CMeshO::FaceIterator fi=mesh.face.begin(); fi!=mesh.face.end(); ++fi){
-    // fi->
-}
-for(auto &&vp:mesh.vert){ // vertex pointer
-    // vp->
-}
-for(auto &&fp:mesh.face){ // face pointer
-    // fp->
-}
-```
-
 ## 頂点、面の追加
 
 ```cpp
@@ -432,10 +157,6 @@ void appendMesh(MyMesh &m1, MyMesh &m2){ // dst, src
 	}
 }
 ```
-
-## 法線計算
-
-
 
 ## 選択した面につながっている面を再帰的に選択
 
@@ -465,18 +186,7 @@ vcg::tri::Allocator<CMeshO>::DeleteFace(mesh, *fi);
 vcg::tri::Allocator<CMeshO>::DeleteVertex(mesh, *vi);
 ```
 
-## Non manifoldの削除
 
-
-
-## プリセットオブジェクトの生成
-
-```cpp
-#include<vcg/complex/algorithms/create/platonic.h>
-
-MyMesh mesh;
-vcg::tri::Octahedron(mesh); // 正八面体のデータを作成
-```
 
 ## 変換行列の作成例
 
