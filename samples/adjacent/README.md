@@ -3,6 +3,14 @@ Reference : http://vcg.isti.cnr.it/vcglib/adjacency.html
 
 
 ```cpp
+// get adjacent faces from a face
+cout << "adjacent faces from a face" << endl;
+for(int i=0; i<3; ++i){
+    CMeshO::FacePointer fp = &(mesh.face[0]);
+    CMeshO::FacePointer fadj = fp->FFp(i);
+    cout << fp->Index() << " : " << fadj->Index() << endl;
+}
+
 // Around the adjacent faces centering on the vertex vp (The order of rotation is undefined)
 cout << "VFIterator" << endl;
 for (face::VFIterator<CMeshO::FaceType> vfi(vp); !vfi.End(); ++vfi){
@@ -45,6 +53,10 @@ index of sample data
 output
 
 ```shell
+adjacent faces from a face
+0 : 3
+0 : 7
+0 : 1
 VFIterator
 3
 2

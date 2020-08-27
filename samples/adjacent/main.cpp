@@ -23,6 +23,14 @@ int main(){
 		return 0;
 	}
 	
+	// get adjacent faces from a face
+	cout << "adjacent faces from a face" << endl;
+	for(int i=0; i<3; ++i){
+		CMeshO::FacePointer fp = &(mesh.face[0]);
+		CMeshO::FacePointer fadj = fp->FFp(i);
+		cout << fp->Index() << " : " << fadj->Index() << endl;
+	}
+	
 	// Around the adjacent faces centering on the vertex vp (The order of rotation is undefined)
 	cout << "VFIterator" << endl;
 	for (face::VFIterator<CMeshO::FaceType> vfi(vp); !vfi.End(); ++vfi){
