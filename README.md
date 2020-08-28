@@ -45,7 +45,7 @@ $ git branch
 First, you have to set below environment values
 
 - `VCGLIB_DIR` : path/to/vcglib (e.g. `C:/Users/Public/Documents/GitHub/vcglib`)
-- `MESHLAB_DIR` : path/to/MeshLab/source (e.g. `C:/Users/Public/Documents/GitHub/meshlab_latest/src`)
+- `MESHLAB_DIR` : path/to/MeshLab/source (e.g. `C:/Users/Public/Documents/GitHub/meshlab/src`)
 - `EIGEN3_INCLUDE_DIR` : path/to/Eigen3 (e.g. `C:/eigen-3.3.7`)
 
 see this [sample](./samples/hello_mesh) for details.
@@ -61,6 +61,7 @@ see this [sample](./samples/hello_mesh) for details.
 - get adjacent vertices/faces : [CODE](./samples/adjacent)
 -  create mesh using just a vector of coords and a vector of indexes : [CODE](./samples/create_mesh_manually)
 -  user defined attribute : [CODE](./samples/user_defined_attr)
+-  add and delete vertices/faces : [CODE](./samples/add_del_vert_face)
 
 
 
@@ -135,30 +136,6 @@ use MeshLab data structure.
 
 # Tips
 
-## 頂点、面の追加
-
-```cpp
-void appendMesh(MyMesh &m1, MyMesh &m2){ // dst, src
-	auto vi = vcg::tri::Allocator<MyMesh>::AddVertices(m1, m2.VN()); // 最初に追加する頂点数を丸ごと確保してから、座標値を代入
-	std::cout << m1.vn << ":" << m1.fn << std::endl;
-	for(int i=0; i<m2.VN(); ++i){
-		vi[i].P() = m2.vert[i].P();
-	}
-	std::cout << m1.vn << ":" << m1.fn << std::endl;
-	auto fi = vcg::tri::Allocator<MyMesh>::AddFaces(m1, m2.FN()); // fiは追加する開始点から始まるなので、追加元のデータインデックスをそのまま使える
-	std::cout << m1.vn << ":" << m1.fn << std::endl;
-	for(int i=0; i<m2.FN(); ++i){
-		int idx0 = vcg::tri::Index(m2, m2.face[i].V(0));
-		int idx1 = vcg::tri::Index(m2, m2.face[i].V(1));
-		int idx2 = vcg::tri::Index(m2, m2.face[i].V(2));
-		std::cout << idx0 << ":" << idx1 << ":" << idx2 << std::endl;
-		fi[i].V(0) = &vi[idx0];
-		fi[i].V(1) = &vi[idx1];
-		fi[i].V(2) = &vi[idx2];
-	}
-}
-```
-
 ## 選択した面につながっている面を再帰的に選択
 
 ```cpp
@@ -173,15 +150,6 @@ cnt = vcg::tri::UpdateSelection<CMeshO>::VertexFromFaceLoose(mesh);
 // 選択された面に属する頂点を選択(AND) (Select all the vertices having all the faces incident on them selected)
 cnt = vcg::tri::UpdateSelection<CMeshO>::VertexFromFaceStrict(mesh); 
 ```
-
-## 面、頂点の削除
-
-```cpp
-vcg::tri::Allocator<CMeshO>::DeleteFace(mesh, *fi);
-vcg::tri::Allocator<CMeshO>::DeleteVertex(mesh, *vi);
-```
-
-
 
 ## 変換行列の作成例
 
@@ -255,19 +223,6 @@ vcg::tri::UpdateBounding<CMeshO>::Box(a.mesh);
 tri::UpdatePosition<CMeshO>::Matrix(m->cm, m->cm.Tr,true);
 tri::UpdateBounding<CMeshO>::Box(m->cm);
 m->cm.Tr.SetIdentity();
-```
-
-### 点と面の距離
-
-```cpp
-vcg::Plane3f plate;
-
-Point3m a(0,0,10),b(10,0,10),c(0,10,10);
-plate.Init(a,b,c);
-
-Point3m p(10,10,0);
-Point3m q = plate.Projection(p); // 点から面への垂線の交点
-float l = vcg::SignedDistancePlanePoint(plate, p); // 点と面の距離
 ```
 
 ### メッシュ間の干渉判定
