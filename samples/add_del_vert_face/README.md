@@ -24,7 +24,7 @@ If you want to delete a vertex, you must first delete the face to which it belon
 
 So you need to get the faces that belong to the vertices.
 
-See get adjacent vertices/faces : [CODE](../samples/adjacent)
+See get adjacent vertices/faces : [CODE](../adjacent)
 
 ```cpp
 mesh.vert.EnableVFAdjacency();
