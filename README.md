@@ -64,6 +64,7 @@ see this [sample](./samples/hello_mesh) for details.
 -  user defined attribute : [CODE](./samples/user_defined_attr)
 -  add and delete vertices/faces : [CODE](./samples/add_del_vert_face)
 -  set color each vertex/face and save as ply: [CODE](./samples/set_color)
+-  set vertex value and save as ply format : [CODE](./samples/ply_with_vert_value)
 
 
 
@@ -84,7 +85,7 @@ see this [sample](./samples/hello_mesh) for details.
 -  angle between two vectors : [CODE](./samples/angle_two_vector)
 -  quaternion : [CODE](./samples/quaternion)
 -  transformation matrix : [CODE](./samples/transformation_matrix)
--  translate matrix with Eigen : [CODE]
+-  translate matrix with Eigen : [CODE](./samples/matrix_with_eigen)
 
 
 
@@ -113,6 +114,20 @@ use MeshLab data structure.
 
 
 
+# How to port the function of MeshLab
+
+MeshLab implements many functions in a plugin format.
+A list of plugins can be found [here](https://github.com/cnr-isti-vclab/meshlab/tree/master/src/meshlabplugins).
+
+Let's take a look at the structure of the [mlsplugin.cpp](https://github.com/cnr-isti-vclab/meshlab/blob/master/src/meshlabplugins/filter_mls/mlsplugin.cpp) file as an example.
+The name of the implemented function is defined [here](https://github.com/cnr-isti-vclab/meshlab/blob/master/src/meshlabplugins/filter_mls/mlsplugin.cpp#L87:#L96).
+The function for plugins is the [applyFilter](https://github.com/cnr-isti-vclab/meshlab/blob/master/src/meshlabplugins/filter_mls/mlsplugin.cpp#L360) function.
+
+The process branches according to the ID contained in the `filter` variable.
+The `applyFiter` function is the starting point of each plug-in process, so if you follow the process from here, you can check all the implementation details.
+
+When searching for the function you want to know how to be implemented on MeshLab, it is recommended way that search function name by using grep command in source directory.
+
 ---
 
 # 残り
@@ -131,39 +146,6 @@ use MeshLab data structure.
 
 
 
-## Eigenとの変換
-
-```cpp
-template <typename T>
-using RMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-typedef RMatrix<MESHLAB_SCALAR> RMatrixm;
-using RefRMatrix = Eigen::Ref<const RMatrixm>;
-using EVector = Eigen::Vector3f;
-```
-
-```cpp
-vcg::Quaternionf qua(vcg::Angle(y01,Y),y01^Y);
-Matrix44m M;
-RMatrixm eigenM = RMatrixm::Identity(4,4); // 初期化時にサイズを指定すること
-qua.ToMatrix(M);
-M.ToEigenMatrix<RMatrixm>(eigenM);
-```
-
-```cpp
-Matrix44m M;
-M.FromEigenMatrix<Eigen::Ref<const RMatrixm>>(ME);
-vcg::tri::UpdatePosition<CMeshO>::Matrix(a.mesh, M);
-vcg::tri::UpdateBounding<CMeshO>::Box(a.mesh);
-```
-
-## 変換行列の適用
-
-```cpp
-tri::UpdatePosition<CMeshO>::Matrix(m->cm, m->cm.Tr,true);
-tri::UpdateBounding<CMeshO>::Box(m->cm);
-m->cm.Tr.SetIdentity();
-```
-
 ### メッシュ間の干渉判定
 
 ```cpp
@@ -171,18 +153,6 @@ m->cm.Tr.SetIdentity();
 mesh2.face.EnableMark();
 int a = vcg::tri::Clean<CMeshO>::SelectIntersectingFaces(mesh1, mesh2);
 ```
-
-メッシュの座標変換
-
-```cpp
-Matrix44m M;
-M.SetTranslate(Point3m(1,1,1));
-vcg::tri::UpdatePosition<CMeshO>::Matrix(mesh, M);
-vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
-
-```
-
-
 
 ## header
 
@@ -432,90 +402,7 @@ bool Vcgmesh::SimplificationEdgeCollapseMarchingCube(float absoluteError){
 
 ```
 
-## curvature
 
-```cpp
-void Vcgmesh::calcCurvature(){
-	compactVert();
-	
-	mesh.vert.EnableVFAdjacency();
-	mesh.vert.EnableCurvature();
-	mesh.vert.EnableCurvatureDir();
-	
-	mesh.face.EnableFFAdjacency();
-	mesh.face.EnableVFAdjacency();
-	
-	// calc normal
-	vcg::tri::UpdateTopology<CMeshO>::FaceFace(mesh);
-	vcg::tri::UpdateTopology<CMeshO>::VertexFace(mesh);
-	// calc curvature
-	vcg::tri::UpdateCurvature<CMeshO>::MeanAndGaussian(mesh); // これも最大最小値は自前計算。これが一番見た目いい感じに計算されてる
-	CMeshO::VertexIterator vi;
-	for(vi=mesh.vert.begin(); vi!=mesh.vert.end(); ++vi){
-		CMeshO::VertexType *pv = &*vi;
-		float H = pv->Kh();
-		float G = pv->Kg();
-		float a = std::max(0.f, H*H-G); // h^2-gは手法によっては負になる場合があるので0でmaxとる
-		MESHLAB_SCALAR sq = sqrt(a);
-		pv->Q() = H-sq;
-		vertex_curvature_maxmin[vi] = std::pair<MESHLAB_SCALAR, MESHLAB_SCALAR>(H+sq, H-sq);
-	}
-	// colorize by vertex quality
-	std::pair<float,float> curv_minmax = vcg::tri::Stat<CMeshO>::ComputePerVertexQualityMinMax(mesh);
-	curv_min = curv_minmax.first;
-	curv_max = curv_minmax.second;
-	qDebug("min:max = %f, %f", curv_min, curv_max);
-	vcg::tri::UpdateColor<CMeshO>::PerVertexQualityRamp(mesh, curv_min, curv_max);
-	
-	for(vi=mesh.vert.begin(); vi!=mesh.vert.end(); ++vi){
-		vi->C() = col_def;
-	}
-	// 色の反映
-	vcg::tri::UpdateFlags<CMeshO>::VertexClearS(mesh);
-	setVertexQualityThreshold(50);	// 初期値設定
-//	colorizeMarked();
-}
-```
-
-
-
-## ply with value
-
-```cpp
-	auto flags = vcg::tri::io::Mask::IOM_VERTCOLOR|
-//				 vcg::tri::io::Mask::IOM_VERTNORMAL|
-//				 vcg::tri::io::Mask::IOM_FACECOLOR|
-				 vcg::tri::io::Mask::IOM_VERTQUALITY;
-	int result = vcg::tri::io::ExporterPLY<CMeshO>::Save(mesh,qPrintable(fname), flags, true);
-	if(result == vcg::ply::PlyError::E_NOERROR){
-		saveFileName = qPrintable(fname);
-		return 1; //success
-	}
-void Vcgmesh::setVertexQualityThresholdAbs(float val){
-	threshold = val;
-	qDebug("th: %f", threshold);
-	int cnt =0;
-	int total=0;
-	
-//	clearAllFlag(MARKED); // 毎回やるのは無駄なので省略
-	CMeshO::VertexIterator vi;
-	for(vi=mesh.vert.begin(); vi!=mesh.vert.end(); ++vi){
-		if(vi->Q()<=threshold){
-//			setFlag(vi, MARKED); // 属性データに保存
-			vi->SetS();
-			cnt++;total++;
-		}else{
-//			clearFlag(vi, MARKED);
-			vi->ClearS();
-			total++;
-		}
-	}
-	qDebug("cnt/total: %d/ %d", cnt, total);
-//	colorizeMarked();
-	loadMeshColor();
-}
-
-```
 
 
 
