@@ -65,6 +65,7 @@ see this [sample](./samples/hello_mesh) for details.
 -  add and delete vertices/faces : [CODE](./samples/add_del_vert_face)
 -  set color each vertex/face and save as ply: [CODE](./samples/set_color)
 -  set vertex value and save as ply format : [CODE](./samples/ply_with_vert_value)
+-  copy and merge mesh data : [CODE](samples/copy_mesh)
 
 
 
@@ -86,6 +87,7 @@ see this [sample](./samples/hello_mesh) for details.
 -  quaternion : [CODE](./samples/quaternion)
 -  transformation matrix : [CODE](./samples/transformation_matrix)
 -  translate matrix with Eigen : [CODE](./samples/matrix_with_eigen)
+-  remove non manifold vertices and faces : [CODE](samples/remove_non_manifold) 未完成
 
 
 
@@ -94,11 +96,10 @@ see this [sample](./samples/hello_mesh) for details.
 use MeshLab data structure.
 
 -  template data structure from MeshLab : [CODE](./samples/template_meshlab)
--  calculate curvature : [CODE]
+-  calculate curvature : [CODE](samples/curvature)
 -  hole filing : [CODE]
--  mesh simplification : [CODE]
--  calculate Hausdorff distance : [CODE]
--  save ply with vertex value : [CODE]
+-  mesh simplification : [CODE](samples/simplification) 未完成
+-  calculate Hausdorff distance : [CODE](samples/Hausdorff_distance) 内容整理 sample target
 -  mesh intersection : [CODE]
 -  : [CODE]
 
@@ -144,8 +145,6 @@ When searching for the function you want to know how to be implemented on MeshLa
 
 光源用の処理も追加
 
-
-
 ### メッシュ間の干渉判定
 
 ```cpp
@@ -153,258 +152,6 @@ When searching for the function you want to know how to be implemented on MeshLa
 mesh2.face.EnableMark();
 int a = vcg::tri::Clean<CMeshO>::SelectIntersectingFaces(mesh1, mesh2);
 ```
-
-## header
-
-```cpp
-#include "glwidget.h"
-#include <wrap/io_trimesh/import.h>
-#include <wrap/io_trimesh/export_ply.h>
-#include <wrap/io_trimesh/export_stl.h>
-#include <vcg/complex/algorithms/update/curvature.h>
-#include <vcg/complex/algorithms/update/color.h>
-#include <vcg/complex/algorithms/clean.h>
-#include <vcg/complex/algorithms/create/resampler.h>
-#include <QRandomGenerator>
-#include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
-//#include <vcg/container/simple_temporary_data.h>
-#include <vcg/complex/algorithms/local_optimization.h>
-#include "quadric_simp.h" // for simplification collapse edge
-#include <vcg/complex/algorithms/clustering.h>
-#include <vcg/complex/algorithms/create/plymc/plymc.h>
-
-#include <QDebug>
-
-#include <QFileInfo>
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <QColor>
-
-#include <vcg/space/triangle3.h>
-
-```
-
-## hausdorff
-
-```cpp
-	.def("calc_Hausdorff_dist", [](Vcgmesh &sample, Vcgmesh &target, bool onlySelected){
-		// I want to add these flag value and set default arguments, but I don't know how declare default arg in class function.
-		bool sampleVert = true;
-		bool sampleEdge = false;
-		bool sampleFace = false;
-		bool sampleFauxEdge = false;
-		bool saveSampleFlag = true;
-		typedef std::unordered_map<std::string, float> MAP;
-		MAP dict;
-		CMeshO *mesh_sample = &sample.mesh;
-		CMeshO *mesh_target = &target.mesh;
-		float distUpperBound = std::numeric_limits<float>::max();//mesh_sample->bbox.Diag()/2.0f;
-		
-		if(sampleEdge && mesh_sample->fn==0) {
-			//Log("Disabled edge sampling. Meaningless when sampling point clouds");
-			sampleEdge=false;
-		}
-		if(sampleFace && mesh_sample->fn==0) {
-			//Log("Disabled face sampling. Meaningless when sampling point clouds");
-			sampleFace=false;
-		}
-		mesh_target->face.EnableMark();
-		vcg::tri::UpdateNormal<CMeshO>::PerFaceNormalized(*mesh_sample);
-
-		vcg::tri::HausdorffSampler<CMeshO> hs(mesh_target);
-
-		CMeshO samplePtMesh;
-		CMeshO closestPtMesh;
-		if(saveSampleFlag)
-		{
-//			closestPtMesh->updateDataMask(MeshModel::MM_VERTCOLOR | MeshModel::MM_VERTQUALITY);
-//			samplePtMesh->updateDataMask(MeshModel::MM_VERTCOLOR | MeshModel::MM_VERTQUALITY);
-			hs.init(&(samplePtMesh),&(closestPtMesh));
-		}
-		
-		hs.dist_upper_bound = distUpperBound;
-
-		qDebug("Sampled  mesh has %7i vert %7i face",mesh_sample->vn,mesh_sample->fn);
-		qDebug("Searched mesh has %7i vert %7i face",mesh_target->vn,mesh_target->fn);
-		qDebug("Max sampling distance %f on a bbox diag of %f",distUpperBound,mesh_target->bbox.Diag());
-
-		if(sampleVert)
-			vcg::tri::SurfaceSampling<CMeshO,HausdorffSampler<CMeshO> >::VertexUniform(*mesh_sample,hs,mesh_sample->vn, onlySelected); // seleceted flag apply to sample
-		if(sampleEdge)
-			vcg::tri::SurfaceSampling<CMeshO,HausdorffSampler<CMeshO> >::EdgeUniform(*mesh_sample,hs,mesh_sample->vn,sampleFauxEdge);
-		if(sampleFace)
-			vcg::tri::SurfaceSampling<CMeshO,HausdorffSampler<CMeshO> >::Montecarlo(*mesh_sample,hs,mesh_sample->vn);
-
-		std::vector<float> vLen;
-		if(saveSampleFlag)
-		{
-//			vcg::tri::UpdateBounding<CMeshO>::Box(samplePtMesh);
-//			vcg::tri::UpdateBounding<CMeshO>::Box(closestPtMesh);
-//			vcg::tri::UpdateColor<CMeshO>::PerVertexQualityRamp(samplePtMesh);
-//			vcg::tri::UpdateColor<CMeshO>::PerVertexQualityRamp(closestPtMesh);
-			for(auto v:samplePtMesh.vert){
-				vLen.push_back(v.Q());
-			}
-		}
-		
-		//Log("Hausdorff Distance computed");
-		dict["total_samples"] = hs.n_total_samples;
-		dict["min"] = hs.getMinDist();
-		dict["max"] = hs.getMaxDist();
-		dict["mean"] = hs.getMeanDist();
-		dict["RMS"] = hs.getRMSDist();
-		//Log("     Sampled %i pts (rng: 0) on %s searched closest on %s",hs.n_total_samples,qUtf8Printable(mm0->label()),qUtf8Printable(mm1->label()));
-		//Log("     min : %f   max %f   mean : %f   RMS : %f",hs.getMinDist(),hs.getMaxDist(),hs.getMeanDist(),hs.getRMSDist());
-		//float d = mesh_sample->bbox.Diag();
-		//Log("Values w.r.t. BBox Diag (%f)",d); // with recpect to
-		//Log("     min : %f   max %f   mean : %f   RMS : %f\n",hs.getMinDist()/d,hs.getMaxDist()/d,hs.getMeanDist()/d,hs.getRMSDist()/d);
-		return std::tuple<MAP,std::vector<float>>(dict,vLen);
-	}, "calculate Hausdorff, sample, target")
-
-```
-
-# simplification
-
-```cpp
-	.def("decimate_QuadricEdgeCollapse", [](Vcgmesh &a, int targetFaceNum, bool selectedOnly, bool autoClean){
-		double qualityThreshold = 0.3;
-		a.SimplificationQuadricEdgeCollapseDecimation(targetFaceNum, qualityThreshold, selectedOnly, autoClean);
-	},py::arg("targetFaceNum"), py::arg("selectedOnly")=false, py::arg("autoClean")=true)
-	.def("decimate_Clustering", [](Vcgmesh &a, float gridsize){
-		a.SimplificationClusteringDecimation(gridsize);
-	})
-	.def("decimate_EdgeCollapseMarchingCube", [](Vcgmesh &a, float abs_error){
-		return a.SimplificationEdgeCollapseMarchingCube(abs_error);
-	})
-  void Vcgmesh::SimplificationClusteringDecimation(float grid_size){
-	float threshold = grid_size;
-	vcg::tri::Clustering<CMeshO, vcg::tri::AverageColorCell<CMeshO> > ClusteringGrid;
-	ClusteringGrid.Init(mesh.bbox,100000,threshold);
-	if(mesh.FN() == 0)
-		ClusteringGrid.AddPointSet(mesh);
-	else
-		ClusteringGrid.AddMesh(mesh);
-	ClusteringGrid.ExtractMesh(mesh);
-	//m.UpdateBoxAndNormals();
-	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
-	if(mesh.fn>0) {
-		vcg::tri::UpdateNormal<CMeshO>::PerFaceNormalized(mesh);
-		vcg::tri::UpdateNormal<CMeshO>::PerVertexAngleWeighted(mesh);
-	}
-	//m.clearDataMask(MeshModel::MM_FACEFACETOPO);
-	mesh.face.DisableFFAdjacency();
-}
-
-void Vcgmesh::SimplificationQuadricEdgeCollapseDecimation(int targetFaceNum, double qualityThreshold, bool selectedOnly, bool autoClean){
-	int TargetFaceNum = targetFaceNum;
-	//double TargetPerc = 0;
-	double QualityThr = qualityThreshold;
-	bool PreserveBoundary = false;
-	double BoundaryWeight = 1.0;
-	bool PreserveNormal = false;
-	bool PreserveTopology = false;
-	bool OptimalPlacement = true;
-	bool PlanarQuadric = false;
-	double PlanarWeight = 0.001;
-	bool QualityWeight = false;
-	bool AutoClean = autoClean;
-	bool Selected = selectedOnly;
-
-	
-	if(TargetFaceNum<=0){
-		TargetFaceNum = mesh.FN()/2;
-	}
-	mesh.vert.EnableVFAdjacency();
-	mesh.face.EnableVFAdjacency();
-	vcg::tri::UpdateTopology<CMeshO>::VertexFace(mesh);
-	mesh.vert.EnableMark();
-	
-	vcg::tri::UpdateFlags<CMeshO>::FaceBorderFromVF(mesh);
-
-	vcg::tri::TriEdgeCollapseQuadricParameter pp;
-	pp.QualityThr = QualityThr;
-	pp.PreserveBoundary = PreserveBoundary;
-	pp.BoundaryQuadricWeight = pp.BoundaryQuadricWeight * BoundaryWeight;
-	pp.PreserveTopology = PreserveTopology;
-	pp.QualityWeight = QualityWeight;
-	pp.NormalCheck = PreserveNormal;
-	pp.OptimalPlacement = OptimalPlacement;
-	pp.QualityQuadric = PlanarQuadric;
-	pp.QualityQuadricWeight = PlanarWeight;
-
-	QuadricSimplification(mesh,TargetFaceNum,Selected,pp);
-
-	if(AutoClean)
-	{
-		int nullFaces=vcg::tri::Clean<CMeshO>::RemoveFaceOutOfRangeArea(mesh,0);
-		int deldupvert=vcg::tri::Clean<CMeshO>::RemoveDuplicateVertex(mesh);
-		int delvert=vcg::tri::Clean<CMeshO>::RemoveUnreferencedVertex(mesh);
-		//mesh.clearDataMask(MeshModel::MM_FACEFACETOPO );
-		mesh.face.DisableFFAdjacency();
-		vcg::tri::Allocator<CMeshO>::CompactVertexVector(mesh);
-		vcg::tri::Allocator<CMeshO>::CompactFaceVector(mesh);
-	}
-
-	//mesh.UpdateBoxAndNormals();
-	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
-	if(mesh.fn>0) {
-		vcg::tri::UpdateNormal<CMeshO>::PerFaceNormalized(mesh);
-		vcg::tri::UpdateNormal<CMeshO>::PerVertexAngleWeighted(mesh);
-	}
-	
-	vcg::tri::UpdateNormal<CMeshO>::NormalizePerFace(mesh);
-	vcg::tri::UpdateNormal<CMeshO>::PerVertexFromCurrentFaceNormal(mesh);
-	vcg::tri::UpdateNormal<CMeshO>::NormalizePerVertex(mesh);
-}
-bool Vcgmesh::SimplificationEdgeCollapseMarchingCube(float absoluteError){
-	if (mesh.fn == 0)
-	{
-		return false;
-	}
-	//mm.updateDataMask(MeshModel::MM_VERTFACETOPO+MeshModel::MM_FACEFACETOPO+MeshModel::MM_VERTMARK);
-	mesh.vert.EnableVFAdjacency();
-	mesh.face.EnableVFAdjacency();
-	vcg::tri::UpdateTopology<CMeshO>::VertexFace(mesh);
-	
-	mesh.face.EnableFFAdjacency();
-	vcg::tri::UpdateTopology<CMeshO>::FaceFace(mesh);
-	
-	mesh.vert.EnableMark();
-	
-	int res = vcg::tri::MCSimplify<CMeshO>(mesh, absoluteError, false);
-	if (res !=1)
-	{
-		//mm.clearDataMask(MeshModel::MM_VERTFACETOPO);
-		//mm.clearDataMask(MeshModel::MM_FACEFACETOPO);
-//		mesh.face.DisableVFAdjacency();
-//		mesh.vert.DisableVFAdjacency();
-//		mesh.face.DisableFFAdjacency();
-		return false;
-	}
-	
-	vcg::tri::Allocator<CMeshO>::CompactFaceVector(mesh);
-	vcg::tri::Clean<CMeshO>::RemoveTVertexByFlip(mesh,20,true);
-	vcg::tri::Clean<CMeshO>::RemoveFaceFoldByFlip(mesh);
-	//mm.clearDataMask(MeshModel::MM_VERTFACETOPO);
-	//mm.clearDataMask(MeshModel::MM_FACEFACETOPO);
-//	mesh.face.DisableVFAdjacency();
-//	mesh.vert.DisableVFAdjacency();
-//	mesh.face.DisableFFAdjacency();
-	vcg::tri::Allocator<CMeshO>::CompactVertexVector(mesh);
-	vcg::tri::Allocator<CMeshO>::CompactFaceVector(mesh);
-	vcg::tri::UpdateTopology<CMeshO>::VertexFace(mesh);
-	vcg::tri::UpdateTopology<CMeshO>::FaceFace(mesh);
-	return true;
-}
-
-```
-
-
-
-
 
 ### end
 
