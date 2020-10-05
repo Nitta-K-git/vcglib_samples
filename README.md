@@ -101,7 +101,9 @@ use MeshLab data structure.
 -  mesh simplification : [CODE](samples/simplification) 未完成
 -  calculate Hausdorff distance : [CODE](samples/Hausdorff_distance) 内容整理 sample target
 -  mesh intersection : [CODE]
--  : [CODE]
+-  select boundary line : [CODE]
+-  simplification : [CODE](./samples/simplification)
+-  subdivision : [CODE](./samples/subdivision)
 
 
 
@@ -112,6 +114,28 @@ use MeshLab data structure.
 ## Visualize with three.js
 
 
+
+# Error handling
+
+`Missing Component Exception -FFAdjacency-`のようなケース
+
+```cpp
+// adjacency関連を有効にする(頂点と面でそれぞれ有効化しないといけないものもある)
+mesh.vert.EnableVFAdjacency();
+mesh.face.EnableFFAdjacency();
+mesh.vert.EnableCurvature();
+mesh.vert.EnableCurvatureDir();
+```
+
+`Assertion failed: f.cFFp(j) != 0, file C:/Users/Public/Documents/GitHub/vcglib/vcg/simplex/face/topology.h, line 39` のようなケース
+
+```cpp
+// 初期化時と関係性が変わった場合は更新が必要
+tri::UpdateTopology<CMeshO>::FaceFace(mesh);
+tri::UpdateTopology<CMeshO>::VertexFace(mesh);
+tri::UpdateNormal<CMeshO>::PerFace(mesh);
+tri::UpdateNormal<CMeshO>::NormalizePerFace(mesh);
+```
 
 
 
