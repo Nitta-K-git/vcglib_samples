@@ -105,6 +105,7 @@ void set_color_by_Q_value(CMeshO &mesh){
 bool calc_min_curvature(CMeshO &mesh){
 	mesh.vert.EnableVFAdjacency();
 	mesh.face.EnableFFAdjacency();
+	mesh.face.EnableVFAdjacency();
 	mesh.vert.EnableCurvature();
 	mesh.vert.EnableCurvatureDir();
 	
