@@ -30,6 +30,7 @@ int main(){
 	bool selected = false;
 	for(int i=0; i<cnt; ++i){
 		Refine<CMeshO,MidPoint<CMeshO> > (mesh, MidPoint<CMeshO>(&mesh), threshold, selected);
+		// Refine<CMeshO,MidPointButterfly<CMeshO> > (mesh, MidPointButterfly<CMeshO>(mesh), threshold, selected); // Butterfly
 	}
 	
 	tri::io::ExporterPLY<CMeshO>::Save(mesh,"out.ply",tri::io::Mask::IOM_NONE);
